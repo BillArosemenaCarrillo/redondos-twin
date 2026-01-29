@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redondos 4.0 - Master Deck</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --accent-color: #dc2626;
+            /* Redondos Red */
+            --secondary-color: #334155;
+            --highlight: #10b981;
+            --gold: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            pointer-events: none;
+            background-color: #0f172a;
+            /* Solid Background for easier Canva replication */
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        .slide.prev {
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+
+        h1 {
+            font-size: 5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            text-align: center;
+            color: white;
+            letter-spacing: -2px;
+        }
+
+        h2 {
+            font-size: 3rem;
+            color: var(--accent-color);
+            margin-bottom: 2rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        h3 {
+            font-size: 2rem;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            font-size: 1.5rem;
+            line-height: 1.5;
+            text-align: center;
+            color: #cbd5e1;
+            max-width: 900px;
+        }
+
+        .grid-2,
+        .grid-3 {
+            display: grid;
+            gap: 3rem;
+            width: 100%;
+            max-width: 1400px;
+            align-items: center;
+        }
+
+        .grid-2 {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .grid-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 2.5rem;
+            border-top: 4px solid var(--accent-color);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-val {
+            font-size: 4rem;
+            font-weight: 900;
+            color: var(--highlight);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .icon-large {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .controls {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.4);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        button.nav-btn {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        /* Slide Specifics */
+        .timeline-item {
+            border-left: 2px solid var(--secondary-color);
+            padding-left: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .timeline-date {
+            color: var(--highlight);
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="slide-container">
+        <!-- 1. Intro -->
+        <div class="slide active">
+            <div style="font-size: 6rem;">🚀</div>
+            <h1>REDONDOS 4.0</h1>
+            <h3 style="color: var(--accent-color);">TRANSFORMACIÓN DIGITAL OPERATIVA</h3>
+            <p style="margin-top: 2rem;">El siguiente salto evolutivo en la gestión de crianza.</p>
+        </div>
+
+        <!-- 2. Contexto Global -->
+        <div class="slide">
+            <h2>EL CONTEXTO GLOBAL (RABOBANK 2026)</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <span class="stat-val" style="font-size: 3rem;">62%</span>
+                    <h3>SMART TECH</h3>
+                    <p>De la nueva tecnología Avícola y Porcina incluye Inteligencia Artificial.</p>
+                    <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.5rem;">Fuente: Rabobank Animal Protein
+                        Report</p>
+                </div>
+                <div class="card">
+                    <span class="icon-large">🛡️</span>
+                    <h3>BIOSEGURIDAD</h3>
+                    <p>"El monitoreo en tiempo real es la única defensa contra la Gripe Aviar."</p>
+                    <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.5rem;">Fuente: WattAgNet Trends</p>
+                </div>
+                <div class="card" style="border-top-color: var(--gold);">
+                    <span class="icon-large">📉</span>
+                    <h3>COSTOS</h3>
+                    <p>La volatilidad del maíz exige "Precision Feeding" diario.</p>
+                    <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.5rem;">Fuente: WattAgNet / Alltech Trends
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Realidad Perú -->
+        <!-- 3. Realidad Perú -->
+        <div class="slide">
+            <h2>REALIDAD ACTUAL: "EL OJO DEL AMO"</h2>
+            <h3 style="color: var(--gold);">GESTIÓN MANUAL VS. RIESGO BIOLÓGICO</h3>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>PUNTOS CIEGOS HOY</h3>
+                    <ul style="text-align: left; font-size: 1.3rem; list-style: none; line-height: 1.8;">
+                        <li>❌ <strong>Agua:</strong> Cisterna de concreto -> Tubería subsuelo. ¿A qué temperatura llega?
+                            (Riesgo Bacteriano).</li>
+                        <li>❌ <strong>Silos:</strong> "Mirar el visor transparente". Dependemos de la vista del
+                            galponero.</li>
+                        <li>❌ <strong>Clima:</strong> "¿Jadean los cerdos?". Reacción tardía subiendo cortinas.</li>
+                    </ul>
+                </div>
+                <div style="text-align: center;">
+                    <span style="font-size: 6rem;">👂👁️</span>
+                    <p>"Operamos con sentidos humanos,<br>no con datos digitales."</p>
+                    <p style="font-size: 0.9rem; color: #64748b; margin-top: 2rem;">(APPA / AVEM 2025: Foco en
+                        "Digitalización y Bioseguridad")</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Solución -->
+        <div class="slide">
+            <h2>LA SOLUCIÓN: VANGUARD</h2>
+            <div
+                style="width: 90%; height: 500px; background: #020617; border: 2px dashed #334155; display: flex; align-items: center; justify-content: center; border-radius: 12px; position: relative;">
+                <span style="color: #64748b; font-size: 2rem;">[INSERTAR VIDEO DEMO AQUÍ]</span>
+                <div
+                    style="position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px;">
+                    🔴 EN VIVO</div>
+            </div>
+        </div>
+
+        <!-- 5. Modulo Welfare -->
+        <div class="slide">
+            <h2>MÓDULO: BIENESTAR ANIMAL</h2>
+            <div class="grid-2">
+                <div>
+                    <h3 style="color: var(--highlight);">DEL "JADEO" AL SENSOR</h3>
+                    <p style="text-align: left;">Automatización basada en confort térmico real.</p>
+                    <ul style="text-align: left; font-size: 1.3rem; margin-top: 1rem; margin-left: 2rem;">
+                        <li>🌡️ <strong>Agua:</strong> Sensor en tubería final (Evitar agua caliente que rechazan).</li>
+                        <li>🌬️ <strong>Ventilación:</strong> Activación por Amperaje (No solo ON/OFF).</li>
+                        <li>🐷 <strong>Estrés:</strong> Alerta antes del jadeo visible.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <span class="stat-val">24/7</span>
+                    <p>Sin error humano. Sin subjetividad.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Modulo Logística -->
+        <div class="slide">
+            <h2>MÓDULO: LOGÍSTICA & ACTIVOS</h2>
+            <div class="grid-3">
+                <div class="card" style="border-top-color: #3b82f6;">
+                    <h3>🚛 AGUA</h3>
+                    <p>Monitoreo de Cisternas y Tanques Elevados.</p>
+                </div>
+                <div class="card" style="border-top-color: #a855f7;">
+                    <h3>🏭 SILOS</h3>
+                    <p>Adiós al "Visor Transparente". Sensor Ultrasónico de Nivel.</p>
+                </div>
+                <div class="card" style="border-top-color: #ec4899;">
+                    <h3>⚙️ MOTORES</h3>
+                    <p>Alerta de Sinfín trabado antes de que falte comida.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Arquitectura -->
+        <div class="slide">
+            <h2>ECOSISTEMA SEGURO</h2>
+            <div class="grid-2">
+                <div style="text-align: center;">
+                    <span style="font-size: 6rem;">☁️</span>
+                    <h3>CLOUD (AWS)</h3>
+                    <p>Escalabilidad infinita y respaldo diario.</p>
+                </div>
+                <div class="card" style="text-align: left;">
+                    <h3>🔐 CIBERSEGURIDAD</h3>
+                    <p>✅ Acceso Basado en Roles (RBAC)</p>
+                    <p>✅ Encriptación SSL/TLS</p>
+                    <p>✅ Auditoría de Accesos (Guest Book)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. Mobile -->
+        <div class="slide">
+            <h2>MOVILIDAD TOTAL</h2>
+            <div class="grid-2">
+                <div>
+                    <span class="icon-large">📱</span>
+                    <h3>TABLET & MOBILE READY</h3>
+                </div>
+                <div>
+                    <p style="font-size: 2rem;">"El supervisor lleva la granja en el bolsillo."</p>
+                    <p style="text-align: left; margin-top: 2rem;">Acceso via navegador web seguro. Sin instalar
+                        aplicaciones pesadas.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. Diferenciación -->
+        <div class="slide">
+            <h2>VDC vs. OPERACIONES</h2>
+            <div class="grid-2">
+                <div class="card" style="opacity: 0.5;">
+                    <h3>VDC TRADICIONAL</h3>
+                    <p>Diseño estático.</p>
+                    <p>Muere al terminar la obra.</p>
+                </div>
+                <div class="card" style="transform: scale(1.1); border-top: 6px solid var(--highlight);">
+                    <h3>VANGUARD (NIVEL 4)</h3>
+                    <p class="highlight">SISTEMA VIVO</p>
+                    <p>IoT + BIM + Business Intelligence</p>
+                    <p>Para la vida útil del activo (20 años).</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 10. Perfil -->
+        <div class="slide">
+            <h2>EL INTEGRADOR</h2>
+            <p>La convergencia de dos mundos.</p>
+            <div class="grid-2" style="margin-top: 2rem;">
+                <div class="card">
+                    <h3>INGENIERÍA CIVIL</h3>
+                    <p>Infraestructura Física</p>
+                    <p>(Redondos PSP Experience)</p>
+                </div>
+                <div class="card">
+                    <h3>BUILDING AUTOMATION</h3>
+                    <p>Inteligencia Digital</p>
+                    <p>(Algonquin College - Canadá)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11. Roadmap -->
+        <div class="slide">
+            <h2>ROADMAP 2026</h2>
+            <div style="width: 80%; text-align: left;">
+                <div class="timeline-item">
+                    <span class="timeline-date">FASE 1 (HOY):</span> VISIBILIDAD TOTAL (Gemelo Digital).
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-date">FASE 2 (Q3 2026):</span> AUTOMATIZACIÓN (Control Remoto).
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-date">FASE 3 (2027):</span> PREDICCIÓN (IA para Ganancia de Peso).
+                </div>
+            </div>
+        </div>
+
+        <!-- 12. Cierre -->
+        <div class="slide">
+            <h2>PROPUESTA: PILOTO DE VALIDACIÓN</h2>
+            <h3 class="highlight">INTEGRACIÓN DIGITAL (MVP)</h3>
+            <div class="grid-2" style="margin-top: 2rem; margin-bottom: 2rem;">
+                <div class="card" style="text-align: left;">
+                    <h3>🎯 ALCANCE</h3>
+                    <p class="stat-val" style="font-size: 2rem;">1 GRANJA</p>
+                    <p>Digitalización de datos existentes (Excel).</p>
+                    <p>Sin obras civiles. Solo Software.</p>
+                </div>
+                <div class="card" style="text-align: left; border-top-color: var(--gold);">
+                    <h3>💰 FINANCIAMIENTO</h3>
+                    <p class="stat-val" style="font-size: 2rem;">BAJO RIESGO</p>
+                    <p>Cubierto por Fee de Setup.</p>
+                    <p>Sin inversión en infraestructura nueva.</p>
+                </div>
+            </div>
+            <button
+                style="padding: 1rem 3rem; font-size: 1.5rem; background: var(--accent-color); color: white; border: none; border-radius: 50px; cursor: pointer;">INICIAR
+                PILOTO</button>
+        </div>
+
+    </div>
+
+    <div class="controls">
+        <button class="nav-btn" onclick="prevSlide()">◀ Anterior</button>
+        <div style="color: #64748b;">VANGUARD MASTER DECK</div>
+        <span id="slide-number">1 / 12</span>
+        <button class="nav-btn" onclick="nextSlide()">Siguiente ▶</button>
+    </div>
+    <div class="progress-bar" id="progress"></div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progress');
+        const numberDisplay = document.getElementById('slide-number');
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active', 'prev');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else if (index < currentSlide) {
+                    slide.classList.add('prev');
+                }
+            });
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            numberDisplay.textContent = `${currentSlide + 1} / ${slides.length}`;
+        }
+
+        function nextSlide() { if (currentSlide < slides.length - 1) { currentSlide++; updateSlide(); } }
+        function prevSlide() { if (currentSlide > 0) { currentSlide--; updateSlide(); } }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        updateSlide();
+    </script>
+</body>
+
+</html>
