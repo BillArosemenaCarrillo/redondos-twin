@@ -89,7 +89,7 @@ export const LoginOverlay: React.FC<LoginProps> = ({ onLogin }) => {
                     </div>
                 </div>
                 <div className="mt-4 text-center">
-                    <span className="text-[10px] text-gray-400 font-mono">Build 18.0 - MASTER GIGA-DATA FINAL STABLE</span>
+                    <span className="text-[10px] text-gray-400 font-mono">Build 19.0 - EMERGENCY STABLE FIX (134 Barns)</span>
                 </div>
             </div>
         </div>
