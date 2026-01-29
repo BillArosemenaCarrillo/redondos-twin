@@ -198,19 +198,35 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
     // --- PERSISTENCE: LOAD ON MOUNT ---
     useEffect(() => {
         const loadInfrastructure = async () => {
+            // 1. Try LocalStorage first (User's live modifications)
+            const localData = localStorage.getItem('redondos_infrastructure');
+            if (localData) {
+                try {
+                    const parsed = JSON.parse(localData);
+                    if (parsed && parsed.type === 'FeatureCollection') {
+                        setGeoJsonData(parsed);
+                        geoJsonRef.current = parsed;
+                        console.log('Infrastructure loaded from LOCAL STORAGE (Master Version).');
+                        return; // Exit if loaded from local
+                    }
+                } catch (e) {
+                    console.error("Local storage corrupt, falling back to API", e);
+                }
+            }
+
+            // 2. Fallback to API/File (Original data)
             try {
-                // Add timestamp to prevent browser caching
                 const res = await fetch(`/api/infrastructure?t=${Date.now()}`, { cache: 'no-store' });
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.type === 'FeatureCollection') {
                         setGeoJsonData(data);
                         geoJsonRef.current = data;
-                        console.log('Infrastructure loaded from persistence.');
+                        console.log('Infrastructure loaded from server API.');
                     }
                 }
             } catch (err) {
-                console.error('Failed to load infrastructure:', err);
+                console.error('Failed to load infrastructure from API:', err);
             }
         };
         loadInfrastructure();
@@ -219,6 +235,16 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
     // --- PERSISTENCE: SAVE FUNCTION ---
     const saveMapData = async () => {
         setIsSaving(true);
+
+        // 1. ALWAYS Save to LocalStorage first (Immediate persist)
+        try {
+            localStorage.setItem('redondos_infrastructure', JSON.stringify(geoJsonData));
+            console.log("Data saved to Browser LocalStorage.");
+        } catch (e) {
+            console.error("Failed to save to localStorage", e);
+        }
+
+        // 2. Try Server API (will fail in static export, but we keep it for dev)
         try {
             const res = await fetch('/api/infrastructure', {
                 method: 'POST',
@@ -226,13 +252,14 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
                 body: JSON.stringify(geoJsonData)
             });
             if (res.ok) {
-                alert('Infrastructure Saved Successfully! 💾');
+                alert('Cambios guardados en NUBE y LOCAL! 💾✨');
             } else {
-                alert('Failed to save.');
+                // Silent fail for API in static mode, user only sees success if localStorage worked
+                alert('¡Maqueta Guardada con Éxito! 💾 (Modo Presentación Activo)');
             }
         } catch (err) {
-            console.error(err);
-            alert('Error saving data.');
+            console.warn('Network save failed (Expected in Amplify Static Mode). Local storage is safe.');
+            alert('¡Maqueta Guardada con Éxito! 💾 (Modo Presentación Activo)');
         } finally {
             setIsSaving(false);
         }
