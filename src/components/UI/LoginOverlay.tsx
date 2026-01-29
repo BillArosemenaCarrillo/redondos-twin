@@ -26,12 +26,30 @@ export const LoginOverlay: React.FC<LoginProps> = ({ onLogin }) => {
 
         setLoading(true);
 
-        // Send Notification to Backend (which sends to Discord)
+        // 🚨 CONFIGURACIÓN DE EMERGENCIA: Envío directo a Discord
+        // (Ya que en AWS Amplify modo estático las APIs internas no funcionan)
+        const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1334589254002315354/fWwG91TscV6_7IlyvB0t2hH_5-sW9T3e970868f0868f0868f0868f0868f0868f"; // URL simulada o placeholder seguro
+
         try {
-            await fetch('/api/notify', {
+            const payload = {
+                embeds: [{
+                    title: "👤 Nueva Visita - Gemelo Digital",
+                    color: 0xDC2626,
+                    fields: [
+                        { name: "Nombre", value: `${name} ${surname}`, inline: true },
+                        { name: "Cargo", value: role, inline: true },
+                        { name: "WhatsApp", value: phone, inline: false },
+                        { name: "Sesión ID", value: sessionId, inline: true },
+                        { name: "Plataforma", value: "AWS Cloud", inline: true }
+                    ],
+                    timestamp: new Date().toISOString()
+                }]
+            };
+
+            await fetch("https://discord.com/api/webhooks/1334589254002315354/fWwG91TscV6_7IlyvB0t2hH_5-sW9T3e970868f0868f0868f0868f0868f0868f0868f", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, surname, role, phone, sessionId })
+                body: JSON.stringify(payload)
             });
         } catch (e) {
             console.error("Error sending notification", e);
