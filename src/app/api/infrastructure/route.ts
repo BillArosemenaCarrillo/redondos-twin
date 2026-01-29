@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
-// export const dynamic = 'force-dynamic'; // Prevent caching
+export const dynamic = 'force-static'; // Required for 'output: export' build
 
 
 const DATA_DIR = path.join(process.cwd(), 'src', 'data');
@@ -29,6 +29,7 @@ export async function GET() {
     }
 }
 
+/*
 export async function POST(request: Request) {
     console.log('API: POST /api/infrastructure received');
     try {
@@ -48,3 +49,4 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Failed to save data' }, { status: 500 });
     }
 }
+*/

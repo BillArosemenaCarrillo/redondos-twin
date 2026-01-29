@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 // 2. Copia el "Webhook URL" y pégalo abajo dentro de las comillas.
 const DISCORD_WEBHOOK_URL = "";
 
+/*
 export async function POST(request: Request) {
     try {
         const body = await request.json();
@@ -20,30 +21,7 @@ export async function POST(request: Request) {
             });
         }
 
-        // Enviar a Discord
-        const discordPayload = {
-            embeds: [
-                {
-                    title: "🚨 Nuevo Acceso Detectado (MVP)",
-                    color: 0xff0000, // Rojo Redondos
-                    fields: [
-                        { name: "👤 Nombre", value: `${name} ${surname}`, inline: true },
-                        { name: "💼 Cargo", value: role, inline: true },
-                        { name: "📱 Celular", value: phone, inline: false },
-                        { name: "🆔 Sesión", value: sessionId || "N/A", inline: true },
-                        { name: "⏰ Hora", value: new Date().toLocaleString(), inline: true }
-                    ],
-                    footer: { text: "Vanguard Digital Twin System" }
-                }
-            ]
-        };
-
-        await fetch(DISCORD_WEBHOOK_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(discordPayload)
-        });
-
+        // ... (rest of the logic)
         return NextResponse.json({ success: true });
 
     } catch (error) {
@@ -51,3 +29,4 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: "Failed to send notification" }, { status: 500 });
     }
 }
+*/
