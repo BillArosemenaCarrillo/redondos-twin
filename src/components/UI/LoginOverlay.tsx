@@ -89,7 +89,7 @@ export const LoginOverlay: React.FC<LoginProps> = ({ onLogin }) => {
                     </div>
                 </div>
                 <div className="mt-4 text-center">
-                    <span className="text-[10px] text-gray-400 font-mono">Build 13.0 - Security + Persistence Active</span>
+                    <span className="text-[10px] text-gray-400 font-mono">Build 14.0 - Master Data + Static Source Active</span>
                 </div>
             </div>
         </div>
