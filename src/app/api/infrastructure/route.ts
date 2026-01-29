@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
-export const dynamic = 'force-dynamic'; // Prevent caching
+// export const dynamic = 'force-dynamic'; // Prevent caching
 
 
 const DATA_DIR = path.join(process.cwd(), 'src', 'data');
