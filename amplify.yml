@@ -9,7 +9,7 @@ frontend:
         - env | grep AMPLIFY
         - npx next build
   artifacts:
-    baseDirectory: .next
+    baseDirectory: out
     files:
       - '**/*'
   cache:
