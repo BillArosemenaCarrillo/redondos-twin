@@ -214,9 +214,9 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
                 }
             }
 
-            // 2. Fallback to API/File (Original data)
+            // 2. Fallback to Static File (For AWS Amplify / Static Export)
             try {
-                const res = await fetch(`/api/infrastructure?t=${Date.now()}`, { cache: 'no-store' });
+                const res = await fetch(`/data/infrastructure.json?t=${Date.now()}`, { cache: 'no-store' });
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.type === 'FeatureCollection') {

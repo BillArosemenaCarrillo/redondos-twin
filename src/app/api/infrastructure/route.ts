@@ -29,7 +29,6 @@ export async function GET() {
     }
 }
 
-/*
 export async function POST(request: Request) {
     console.log('API: POST /api/infrastructure received');
     try {
@@ -49,4 +48,3 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Failed to save data' }, { status: 500 });
     }
 }
-*/
