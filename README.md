@@ -1,0 +1,3 @@
+# Gemelo Digital Vanguard - Redondos
+
+**Estado:** 🚀 Desplegando en AWS Amplify...
