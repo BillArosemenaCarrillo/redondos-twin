@@ -180,7 +180,26 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
         }
     }, []);
 
-    // Trackers Sync
+    const [mapInstanceId, setMapInstanceId] = useState(0);
+
+    // --- DATA RESTORATION ---
+    useEffect(() => {
+        const localData = localStorage.getItem('redondos_infrastructure');
+        if (localData) {
+            try {
+                const parsed = JSON.parse(localData);
+                if (parsed?.features?.length > 0) {
+                    setGeoJsonData(parsed);
+                    geoJsonRef.current = parsed;
+                }
+            } catch (e) {
+                console.error("Local storage load failed:", e);
+                localStorage.removeItem('redondos_infrastructure');
+            }
+        }
+    }, []);
+
+    // Trackers Sync (Local/Cloud)
     useEffect(() => {
         const trackersJson = localStorage.getItem('redondos_trackers');
         if (trackersJson) setTrackers(JSON.parse(trackersJson));
@@ -211,12 +230,18 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
         }
 
         // Reliable fallback styles for production
-        const styles = [
+        const darkStyles = [
             'https://tiles.openfreemap.org/styles/dark',
             'https://basemaps.cartocp.com/gl/dark-matter-gl-style/style.json',
             'https://demotiles.maplibre.org/style.json'
         ];
+        const lightStyles = [
+            'https://tiles.openfreemap.org/styles/liberty',
+            'https://basemaps.cartocp.com/gl/voyager-gl-style/style.json',
+            'https://demotiles.maplibre.org/style.json'
+        ];
 
+        const activeStyles = mapStyle === 'dark' ? darkStyles : lightStyles;
         let styleIndex = 0;
 
         const initMapInstance = (url: string) => {
@@ -232,10 +257,10 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
 
             map.current.on('error', (e) => {
                 console.error("Style error for:", url, e);
-                if (styleIndex < styles.length - 1) {
+                if (styleIndex < activeStyles.length - 1) {
                     styleIndex++;
                     map.current?.remove();
-                    initMapInstance(styles[styleIndex]);
+                    initMapInstance(activeStyles[styleIndex]);
                 }
             });
 
@@ -243,6 +268,7 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
                 if (!map.current) return;
                 map.current.resize();
 
+                // Add Sources
                 map.current.addSource('galpones', {
                     type: 'geojson',
                     data: geoJsonData
@@ -276,12 +302,15 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
                         'circle-stroke-color': '#ffffff'
                     }
                 });
+
+                // Trigger data sync after load
+                setMapInstanceId(prev => prev + 1);
             });
         };
 
-        initMapInstance(styles[styleIndex]);
+        initMapInstance(activeStyles[styleIndex]);
 
-        // Auto-resize interval to handle production URL issues
+        // Auto-resize interval 
         const resizer = setInterval(() => {
             if (map.current) map.current.resize();
         }, 1500);
@@ -298,15 +327,17 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
         const updateMapSources = () => {
             if (!map.current?.isStyleLoaded()) return;
             const galponesSource = map.current.getSource('galpones') as maplibregl.GeoJSONSource;
-            if (galponesSource) galponesSource.setData(geoJsonData);
+            if (galponesSource) {
+                galponesSource.setData(geoJsonData);
+            }
         };
 
         if (map.current.isStyleLoaded()) {
             updateMapSources();
         } else {
-            map.current.on('load', updateMapSources);
+            map.current.once('load', updateMapSources);
         }
-    }, [geoJsonData]);
+    }, [geoJsonData, mapInstanceId]);
 
     // --- TRACKER SYNC EFFECT ---
     useEffect(() => {
@@ -330,9 +361,9 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
         if (map.current.isStyleLoaded()) {
             updateTrackerData();
         } else {
-            map.current.on('load', updateTrackerData);
+            map.current.once('load', updateTrackerData);
         }
-    }, [trackers]);
+    }, [trackers, mapInstanceId]);
 
     // --- SENSOR SIMULATION ---
     useEffect(() => {
