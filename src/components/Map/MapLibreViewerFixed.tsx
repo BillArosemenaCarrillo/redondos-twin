@@ -201,8 +201,12 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
     useEffect(() => {
         if (!mapContainer.current) return;
 
-        if (map.current) {
-            map.current.remove();
+        if (map.current && typeof map.current.remove === 'function') {
+            try {
+                map.current.remove();
+            } catch (e) {
+                console.warn("Error cleaning up map instance:", e);
+            }
             map.current = null;
         }
 
