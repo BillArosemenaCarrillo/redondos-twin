@@ -137,11 +137,10 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
 
         map.current = new maplibregl.Map({
             container: mapContainer.current,
-            style: `https://basemaps.cartocp.com/gl/${mapStyle === 'dark' ? 'dark-matter' : 'voyager'}-gl-style/style.json`,
+            style: `https://demotiles.maplibre.org/style.json`,
             center: [REDONDOS_PLANT_COORDS.lng, REDONDOS_PLANT_COORDS.lat],
             zoom: zoom,
-            pitch: 45,
-            antialias: true
+            pitch: 45
         });
 
         map.current.on('load', () => {
