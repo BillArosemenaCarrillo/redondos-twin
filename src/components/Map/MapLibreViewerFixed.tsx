@@ -143,23 +143,23 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
         loadInfrastructure();
     }, []);
 
-    // --- TRACKERS SYNC: LOCAL STORAGE + FIREBASE CLOUD ---
+    // --- TRACKERS SYNC: LOCAL STORAGE + MQTT CLOUD BRIDGE ---
     useEffect(() => {
         // 1. Initial Local Load
         const trackersJson = localStorage.getItem('redondos_trackers');
         if (trackersJson) setTrackers(JSON.parse(trackersJson));
 
-        // 2. Client-side Firebase listening (Static compatible)
-        let cancelListener: any = null;
+        // 2. Client-side MQTT listening (Static compatible & No Keys needed)
+        let mqttClient: any = null;
 
         const initCloudSync = async () => {
             try {
-                const { listenToTrackers } = await import('../../lib/firebase');
-                cancelListener = listenToTrackers((cloudTrackers) => {
+                const { initMQTT } = await import('../../lib/mqtt');
+                mqttClient = initMQTT((cloudData) => {
                     setTrackers(prev => {
-                        const merged = { ...prev, ...cloudTrackers };
+                        const merged = { ...prev, [cloudData.id]: cloudData };
 
-                        // Update traces whenever we get new cloud/local coordinates
+                        // Update traces
                         setTraces((tracePrev: Record<string, [number, number][]>) => {
                             const newTraces = { ...tracePrev };
                             Object.values(merged).forEach((t: any) => {
@@ -180,13 +180,29 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
                     });
                 });
             } catch (err) {
-                console.error("Firebase startup error", err);
+                console.error("MQTT startup error", err);
             }
         };
 
         initCloudSync();
-        return () => { if (cancelListener) cancelListener(); };
+        return () => {
+            // MQTT client cleanup if needed, though we usually keep it alive
+        };
     }, []);
+
+    // Function to fly to active trackers
+    const focusOnTrackers = () => {
+        const activeTrackers = Object.values(trackers);
+        if (activeTrackers.length > 0 && map.current) {
+            const first = activeTrackers[0] as any;
+            map.current.flyTo({
+                center: [first.coords.lng, first.coords.lat],
+                zoom: 18,
+                pitch: 60,
+                duration: 2000
+            });
+        }
+    };
 
     // --- PERSISTENCE: SAVE FUNCTION ---
     const saveMapData = async () => {
@@ -1618,9 +1634,20 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
                                 <span className="font-bold text-sm tracking-wider uppercase">
                                     {selectedIds.size === 0 ? 'PLANT OVERVIEW' : (selectedIds.size === 1 ? lastSelectedName : `SELECTED (${selectedIds.size})`)}
                                 </span>
-                                {selectedIds.size > 0 && (
-                                    <span className="text-[9px] text-slate-500 font-mono">ID: {String(Array.from(selectedIds)[0]).substring(0, 8)}</span>
-                                )}
+                                <div className="flex items-center gap-2">
+                                    {Object.keys(trackers).length > 0 && (
+                                        <button
+                                            onClick={focusOnTrackers}
+                                            className="bg-indigo-600 hover:bg-indigo-500 text-white p-1 rounded-md shadow-lg animate-bounce"
+                                            title="Centrar en mi ubicación"
+                                        >
+                                            🛰️
+                                        </button>
+                                    )}
+                                    {selectedIds.size > 0 && (
+                                        <span className="text-[9px] text-slate-500 font-mono">ID: {String(Array.from(selectedIds)[0]).substring(0, 8)}</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
