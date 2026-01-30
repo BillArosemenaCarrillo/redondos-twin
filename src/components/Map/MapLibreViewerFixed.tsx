@@ -101,7 +101,6 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
 
     const geoJsonRef = useRef<any>(masterData);
     const redZonesRef = useRef({ type: 'FeatureCollection', features: [] });
-    const threeLayerRef = useRef<ThreeLayer | null>(null);
 
     // Persistence load
     useEffect(() => {
@@ -126,7 +125,6 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
                 const { initMQTT } = await import('../../lib/mqtt');
                 mqttClient = initMQTT((cloudData) => {
                     setTrackers(prev => ({ ...prev, [cloudData.id]: cloudData }));
-                    // (Traces logic omitted for brevity in rewrite, but can be added back)
                 });
             } catch (err) { console.error(err); }
         };
@@ -209,6 +207,19 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
         updateMapData();
     }, [trackers]);
 
+    const focusOnTrackers = () => {
+        const activeTrackers = Object.values(trackers);
+        if (activeTrackers.length > 0 && map.current) {
+            const first = activeTrackers[0] as any;
+            map.current.flyTo({
+                center: [first.coords.lng, first.coords.lat],
+                zoom: 18,
+                pitch: 60,
+                duration: 2000
+            });
+        }
+    };
+
     const toggleRain = () => setEnvironment(prev => ({ ...prev, isRaining: !prev.isRaining }));
     const toggleMapStyle = () => setMapStyle(mapStyle === 'dark' ? 'streets' : 'dark');
     const handleTeleport = () => {
@@ -223,7 +234,7 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
             </div>
 
             <main className="flex-1 order-1 md:order-2 relative overflow-hidden flex flex-col h-full w-full">
-                <div className={`relative w-full h-full ${activeSection !== 'overview' ? 'hidden' : ''}`}>
+                <div className={`relative w-full h-full ${className} ${activeSection !== 'overview' ? 'hidden' : ''}`}>
                     <div ref={mapContainer} className="w-full h-full" />
 
                     {/* HUD: SENSOR DATA (Live) */}
