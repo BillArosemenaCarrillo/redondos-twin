@@ -135,9 +135,13 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
     useEffect(() => {
         if (!mapContainer.current) return;
 
+        const styleUrl = mapStyle === 'dark'
+            ? 'https://basemaps.cartocp.com/gl/dark-matter-gl-style/style.json'
+            : 'https://basemaps.cartocp.com/gl/voyager-gl-style/style.json';
+
         map.current = new maplibregl.Map({
             container: mapContainer.current,
-            style: `https://demotiles.maplibre.org/style.json`,
+            style: styleUrl,
             center: [REDONDOS_PLANT_COORDS.lng, REDONDOS_PLANT_COORDS.lat],
             zoom: zoom,
             pitch: 45
@@ -187,12 +191,29 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
         return () => map.current?.remove();
     }, [mapStyle]);
 
+    // --- DATA SYNC EFFECT ---
+    useEffect(() => {
+        if (!map.current) return;
+        const updateMapSources = () => {
+            if (!map.current?.isStyleLoaded()) return;
+            const galponesSource = map.current.getSource('galpones') as maplibregl.GeoJSONSource;
+            if (galponesSource) galponesSource.setData(geoJsonData);
+        };
+
+        if (map.current.isStyleLoaded()) {
+            updateMapSources();
+        } else {
+            map.current.on('load', updateMapSources);
+        }
+    }, [geoJsonData]);
+
     // --- TRACKER SYNC EFFECT ---
     useEffect(() => {
         if (!map.current) return;
 
-        const updateMapData = () => {
-            const source = map.current?.getSource('live-trackers') as maplibregl.GeoJSONSource;
+        const updateTrackerData = () => {
+            if (!map.current?.isStyleLoaded()) return;
+            const source = map.current.getSource('live-trackers') as maplibregl.GeoJSONSource;
             if (source) {
                 const features = Object.values(trackers)
                     .filter(t => t && t.coords && typeof t.coords.lng === 'number')
@@ -205,16 +226,22 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
             }
         };
 
-        updateMapData();
+        if (map.current.isStyleLoaded()) {
+            updateTrackerData();
+        } else {
+            map.current.on('load', updateTrackerData);
+        }
     }, [trackers]);
 
     // --- SENSOR SIMULATION ---
     useEffect(() => {
         const interval = setInterval(() => {
             const newData: Record<string, SimulationState> = {};
-            geoJsonData.features?.forEach((f: any) => {
-                if (f.properties.type === 'galpon') {
-                    newData[f.id] = {
+            const features = geoJsonData.features || [];
+            features.forEach((f: any) => {
+                const type = f.properties?.type;
+                if (type === 'galpon') {
+                    newData[f.id || f.properties.id] = {
                         temperature: 24 + Math.random() * 5,
                         humidity: 60 + Math.random() * 10,
                         ammonia: 10 + Math.random() * 5,
