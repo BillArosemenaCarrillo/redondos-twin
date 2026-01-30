@@ -100,8 +100,8 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
     };
 
     const [sanitaryRules] = useState<Record<string, { forbiddenContacts: string[], allowedZoneIds: string[] }>>({
-        'Operario-A': { forbiddenContacts: ['Operario-B'], allowedZoneIds: [1769696928308] }, // Galpon 8308
-        'Operario-B': { forbiddenContacts: ['Operario-A'], allowedZoneIds: [1769696935651] }  // Galpon 5651
+        'Operario-A': { forbiddenContacts: ['Operario-B'], allowedZoneIds: ["1769696928308"] }, // Galpon 8308
+        'Operario-B': { forbiddenContacts: ['Operario-A'], allowedZoneIds: ["1769696935651"] }  // Galpon 5651
     });
     const [sanitaryLogs, setSanitaryLogs] = useState<any[]>([]);
 
@@ -115,6 +115,7 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
                 for (let j = i + 1; j < trackerEntries.length; j++) {
                     const t1 = trackerEntries[i] as any;
                     const t2 = trackerEntries[j] as any;
+                    if (!t1.coords || !t2.coords) continue;
 
                     const dist = Math.sqrt(
                         Math.pow(t1.coords.lat - t2.coords.lat, 2) +
@@ -140,7 +141,7 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
                 const rules = sanitaryRules[t.name] || sanitaryRules[t.id];
                 if (rules) {
                     // Check if inside any of his allowed zones
-                    // (Simplification: just finding if he's near his zone center for now, 
+                    // (Simplification: just finding if he's near his zone center for now,
                     // or we could use isPointInPolygon if we restored the geoJson logic)
                     newLogs.push({
                         type: 'ZONING',
@@ -161,15 +162,21 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
     const geoJsonRef = useRef<any>(masterData);
     const redZonesRef = useRef({ type: 'FeatureCollection', features: [] });
 
-    // Persistence load
+    // --- DATA RESTORATION ---
     useEffect(() => {
         const localData = localStorage.getItem('redondos_infrastructure');
         if (localData) {
             try {
                 const parsed = JSON.parse(localData);
-                setGeoJsonData(parsed);
-                geoJsonRef.current = parsed;
-            } catch (e) { console.error(e); }
+                // Only overwrite if parsed data actually has features
+                if (parsed?.features?.length > 0) {
+                    setGeoJsonData(parsed);
+                    geoJsonRef.current = parsed;
+                }
+            } catch (e) {
+                console.error("Local storage load failed:", e);
+                localStorage.removeItem('redondos_infrastructure'); // Clean up corrupt data
+            }
         }
     }, []);
 
@@ -194,61 +201,91 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
     useEffect(() => {
         if (!mapContainer.current) return;
 
-        // Using a more robust, non-blocked style URL
-        const styleUrl = mapStyle === 'dark'
-            ? 'https://tiles.openfreemap.org/styles/dark'
-            : 'https://tiles.openfreemap.org/styles/liberty';
+        if (map.current) {
+            map.current.remove();
+            map.current = null;
+        }
 
-        map.current = new maplibregl.Map({
-            container: mapContainer.current,
-            style: styleUrl,
-            center: [REDONDOS_PLANT_COORDS.lng, REDONDOS_PLANT_COORDS.lat],
-            zoom: zoom,
-            pitch: 45
-        });
+        // Reliable fallback styles for production
+        const styles = [
+            'https://tiles.openfreemap.org/styles/dark',
+            'https://basemaps.cartocp.com/gl/dark-matter-gl-style/style.json',
+            'https://demotiles.maplibre.org/style.json'
+        ];
 
-        map.current.on('load', () => {
-            if (!map.current) return;
+        let styleIndex = 0;
 
-            // Add Sources
-            map.current.addSource('galpones', {
-                type: 'geojson',
-                data: geoJsonData
+        const initMapInstance = (url: string) => {
+            if (!mapContainer.current) return;
+
+            map.current = new maplibregl.Map({
+                container: mapContainer.current,
+                style: url,
+                center: [REDONDOS_PLANT_COORDS.lng, REDONDOS_PLANT_COORDS.lat],
+                zoom: zoom,
+                pitch: 45
             });
 
-            // Extrusion Layer for BIM Models
-            map.current.addLayer({
-                id: 'galpones-extrusion',
-                type: 'fill-extrusion',
-                source: 'galpones',
-                paint: {
-                    'fill-extrusion-color': ['get', 'color'],
-                    'fill-extrusion-height': ['get', 'height'],
-                    'fill-extrusion-base': 0,
-                    'fill-extrusion-opacity': 0.8
+            map.current.on('error', (e) => {
+                console.error("Style error for:", url, e);
+                if (styleIndex < styles.length - 1) {
+                    styleIndex++;
+                    map.current?.remove();
+                    initMapInstance(styles[styleIndex]);
                 }
             });
 
-            // Live Trackers Source
-            map.current.addSource('live-trackers', {
-                type: 'geojson',
-                data: { type: 'FeatureCollection', features: [] }
-            });
+            map.current.on('load', () => {
+                if (!map.current) return;
+                map.current.resize();
 
-            map.current.addLayer({
-                id: 'live-trackers-layer',
-                type: 'circle',
-                source: 'live-trackers',
-                paint: {
-                    'circle-radius': 8,
-                    'circle-color': '#6366f1',
-                    'circle-stroke-width': 2,
-                    'circle-stroke-color': '#ffffff'
-                }
-            });
-        });
+                map.current.addSource('galpones', {
+                    type: 'geojson',
+                    data: geoJsonData
+                });
 
-        return () => map.current?.remove();
+                map.current.addLayer({
+                    id: 'galpones-extrusion',
+                    type: 'fill-extrusion',
+                    source: 'galpones',
+                    paint: {
+                        'fill-extrusion-color': ['get', 'color'],
+                        'fill-extrusion-height': ['get', 'height'],
+                        'fill-extrusion-base': 0,
+                        'fill-extrusion-opacity': 0.8
+                    }
+                });
+
+                map.current.addSource('live-trackers', {
+                    type: 'geojson',
+                    data: { type: 'FeatureCollection', features: [] }
+                });
+
+                map.current.addLayer({
+                    id: 'live-trackers-layer',
+                    type: 'circle',
+                    source: 'live-trackers',
+                    paint: {
+                        'circle-radius': 8,
+                        'circle-color': '#6366f1',
+                        'circle-stroke-width': 2,
+                        'circle-stroke-color': '#ffffff'
+                    }
+                });
+            });
+        };
+
+        initMapInstance(styles[styleIndex]);
+
+        // Auto-resize interval to handle production URL issues
+        const resizer = setInterval(() => {
+            if (map.current) map.current.resize();
+        }, 1500);
+
+        return () => {
+            clearInterval(resizer);
+            map.current?.remove();
+        };
     }, [mapStyle]);
 
     // --- DATA SYNC EFFECT ---
