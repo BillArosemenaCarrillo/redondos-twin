@@ -14,7 +14,8 @@ import {
     CircleDot,
     Sparkles,
     Heart,
-    Smartphone
+    Smartphone,
+    Factory
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -25,9 +26,10 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection }) => {
     const menuItems = [
         { id: 'overview', label: 'OVERVIEW', icon: LayoutDashboard, color: 'text-indigo-400' },
-        { id: 'climate', label: 'CLIMATE', icon: Thermometer, color: 'text-cyan-400' },
-        { id: 'feeding', label: 'FEEDING', icon: Beef, color: 'text-yellow-400' },
+        { id: 'plant', label: 'PLANTA ALIM.', icon: Factory, color: 'text-orange-500' },
         { id: 'logistics', label: 'LOGISTICS', icon: Truck, color: 'text-emerald-400' },
+        { id: 'feeding', label: 'FEEDING', icon: Beef, color: 'text-yellow-400' },
+        { id: 'climate', label: 'CLIMATE', icon: Thermometer, color: 'text-cyan-400' },
         { id: 'management', label: 'GESTOR', icon: BarChart3, color: 'text-pink-400' },
         { id: 'biosecurity', label: 'BIO-SEC', icon: ShieldCheck, color: 'text-purple-400' },
         { id: 'welfare', label: 'WELFARE', icon: Heart, color: 'text-pink-500' },

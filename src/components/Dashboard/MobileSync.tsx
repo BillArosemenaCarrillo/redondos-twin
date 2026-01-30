@@ -11,8 +11,11 @@ import {
     WifiOff,
     Battery,
     Activity,
-    AlertCircle
+    AlertCircle,
+    Navigation,
+    MapPin
 } from 'lucide-react';
+import { useTracker } from '../../hooks/useTracker';
 
 const MobileSync = () => {
     const [isScanning, setIsScanning] = useState(false);
@@ -20,6 +23,31 @@ const MobileSync = () => {
     const [telemetry, setTelemetry] = useState<any>(null);
     const [offlineBuffer, setOfflineBuffer] = useState<any[]>([]);
     const [isSyncing, setIsSyncing] = useState(false);
+
+    // GPS Tracker State
+    const [isTracking, setIsTracking] = useState(false);
+    const { coords, error: gpsError } = useTracker(isTracking);
+    const [userName, setUserName] = useState('Operario 01');
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const storedName = localStorage.getItem('vanguard_my_name');
+            if (storedName) setUserName(storedName);
+        }
+    }, []);
+
+    const handleNameChange = (name: string) => {
+        setUserName(name);
+        localStorage.setItem('vanguard_my_name', name);
+    };
+
+    const toggleTracking = () => {
+        const next = !isTracking;
+        setIsTracking(next);
+        if (next) {
+            localStorage.setItem('vanguard_my_type', 'person');
+        }
+    };
 
     const connectBluetooth = async () => {
         setIsScanning(true);
@@ -45,7 +73,7 @@ const MobileSync = () => {
     };
 
     const startMockTelemetry = () => {
-        setInterval(() => {
+        const interval = setInterval(() => {
             const data = {
                 temp: (24 + Math.random() * 2).toFixed(1),
                 hum: (60 + Math.random() * 10).toFixed(0),
@@ -55,6 +83,7 @@ const MobileSync = () => {
             setTelemetry(data);
             setOfflineBuffer(prev => [...prev.slice(-19), data]);
         }, 2000);
+        return () => clearInterval(interval);
     };
 
     const syncToCloud = () => {
@@ -66,12 +95,12 @@ const MobileSync = () => {
     };
 
     return (
-        <div className="flex-1 bg-slate-950 flex flex-col items-center justify-center p-4 text-white">
+        <div className="flex-1 bg-slate-950 flex flex-col items-center justify-center p-4 text-white overflow-y-auto">
             {/* MOBILE TOP BAR */}
-            <div className="w-full max-w-sm flex justify-between items-center mb-8 px-4">
+            <div className="w-full max-w-sm flex justify-between items-center mb-4 px-4">
                 <div className="flex items-center gap-2">
                     <WifiOff className="w-4 h-4 text-slate-500" />
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Offline Mode</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Modo Híbrido</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-slate-500">85%</span>
@@ -80,77 +109,105 @@ const MobileSync = () => {
             </div>
 
             {/* MAIN APP CONTAINER */}
-            <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-[3rem] p-6 shadow-2xl relative overflow-hidden flex flex-col items-center min-h-[600px]">
-                <div className="w-1/3 h-1.5 bg-slate-800 rounded-full mb-8"></div>
+            <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-[3rem] p-6 shadow-2xl relative overflow-hidden flex flex-col items-center min-h-[700px]">
+                <div className="w-1/3 h-1.5 bg-slate-800 rounded-full mb-6"></div>
 
-                <h2 className="text-xl font-black mb-2 tracking-tighter uppercase italic">Vanguard Sync</h2>
-                <p className="text-slate-400 text-[10px] text-center mb-8 px-4 font-medium leading-tight">
-                    Colección de datos local vía Bluetooth para zonas sin conexión.
-                </p>
-
-                {/* BT STATUS */}
-                <div className="relative mb-12">
-                    <motion.div
-                        animate={isScanning ? { scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] } : {}}
-                        transition={{ repeat: Infinity, duration: 2 }}
-                        className="absolute inset-0 bg-indigo-500/20 rounded-full scale-150 blur-2xl"
+                <div className="text-center mb-6">
+                    <h2 className="text-xl font-black mb-1 tracking-tighter uppercase italic">Vanguard Mobile</h2>
+                    <input
+                        type="text"
+                        value={userName}
+                        onChange={(e) => handleNameChange(e.target.value)}
+                        className="bg-transparent text-center text-slate-400 text-[10px] border-b border-slate-800 focus:border-indigo-500 outline-none w-32 uppercase font-bold"
                     />
-                    <button
-                        onClick={connectBluetooth}
-                        className={`w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500 ${device ? 'bg-indigo-600 shadow-[0_0_30px_rgba(79,70,229,0.5)]' : 'bg-slate-800 border border-slate-700'}`}
-                    >
-                        {isScanning ? <BluetoothSearching className="w-10 h-10 animate-pulse" /> :
-                            device ? <BluetoothConnected className="w-10 h-10" /> :
-                                <Bluetooth className="w-10 h-10 text-slate-400" />}
-                    </button>
-                    {device && (
-                        <motion.div
-                            initial={{ scale: 0 }} animate={{ scale: 1 }}
-                            className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-4 border-slate-900 flex items-center justify-center"
+                </div>
+
+                {/* GPS TRACKER MODULE */}
+                <div className={`w-full p-4 rounded-2xl mb-4 transition-all duration-500 ${isTracking ? 'bg-indigo-600/20 border border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'bg-slate-800/50 border border-slate-700'}`}>
+                    <div className="flex justify-between items-center mb-3">
+                        <div className="flex items-center gap-2">
+                            <Navigation className={`w-4 h-4 ${isTracking ? 'text-indigo-400 animate-pulse' : 'text-slate-500'}`} />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Rastreo GPS</span>
+                        </div>
+                        <button
+                            onClick={toggleTracking}
+                            className={`px-3 py-1 rounded-full text-[9px] font-black transition-all ${isTracking ? 'bg-indigo-500 text-white' : 'bg-slate-700 text-slate-400'}`}
                         >
-                            <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-                        </motion.div>
+                            {isTracking ? 'ACTIVO' : 'INACTIVO'}
+                        </button>
+                    </div>
+
+                    {isTracking && coords ? (
+                        <div className="flex flex-col gap-1 p-2 bg-black/30 rounded-lg">
+                            <div className="flex justify-between text-[10px] font-mono">
+                                <span className="text-slate-500">LAT:</span>
+                                <span className="text-indigo-300">{coords.lat.toFixed(6)}</span>
+                            </div>
+                            <div className="flex justify-between text-[10px] font-mono">
+                                <span className="text-slate-500">LNG:</span>
+                                <span className="text-indigo-300">{coords.lng.toFixed(6)}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-ping"></div>
+                                <span className="text-[9px] text-indigo-400 font-bold">TRANSMITIENDO EN VIVO</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-center py-2">
+                            <p className="text-[9px] text-slate-500 italic">Pulsa para iniciar transmisión de ubicación</p>
+                            {gpsError && <p className="text-[9px] text-red-400 mt-1 uppercase font-bold">{gpsError}</p>}
+                        </div>
                     )}
                 </div>
 
-                {/* TELEMETRY CARD */}
-                <AnimatePresence>
-                    {telemetry && (
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            className="w-full bg-slate-800/50 border border-slate-700 rounded-2xl p-4 mb-4 grid grid-cols-2 gap-4"
+                {/* BT / SENSOR MODULE */}
+                <div className="w-full flex gap-4 mb-4">
+                    {/* BT STATUS */}
+                    <div className="relative flex-1 flex flex-col items-center">
+                        <button
+                            onClick={connectBluetooth}
+                            className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 ${device ? 'bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'bg-slate-800 border border-slate-700'}`}
                         >
-                            <div className="text-center">
-                                <span className="block text-[8px] text-slate-500 font-bold uppercase mb-1">Temp</span>
-                                <span className="text-xl font-black font-mono">{telemetry.temp}°C</span>
-                            </div>
-                            <div className="text-center">
-                                <span className="block text-[8px] text-slate-500 font-bold uppercase mb-1">Humedad</span>
-                                <span className="text-xl font-black font-mono">{telemetry.hum}%</span>
-                            </div>
-                            <div className="text-center col-span-2 border-t border-slate-700 pt-3">
-                                <span className="block text-[8px] text-slate-500 font-bold uppercase mb-1">Nivel de Estrés</span>
-                                <div className="flex items-center justify-center gap-2">
-                                    <Activity className="w-3 h-3 text-pink-400" />
-                                    <span className="text-lg font-black font-mono text-pink-400">{telemetry.stress}%</span>
+                            {isScanning ? <BluetoothSearching className="w-6 h-6 animate-pulse" /> :
+                                device ? <BluetoothConnected className="w-6 h-6" /> :
+                                    <Bluetooth className="w-6 h-6 text-slate-400" />}
+                        </button>
+                        <span className="text-[8px] mt-2 font-bold text-slate-500 uppercase">Bluetooth</span>
+                    </div>
+
+                    {/* TELEMETRY MINI-CARD */}
+                    <div className="flex-[2] bg-slate-800/50 border border-slate-700 rounded-2xl p-3 flex flex-col justify-center">
+                        {telemetry ? (
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <span className="block text-[7px] text-slate-500 font-black uppercase">Temp</span>
+                                    <span className="text-sm font-black font-mono">{telemetry.temp}°</span>
+                                </div>
+                                <div>
+                                    <span className="block text-[7px] text-slate-500 font-black uppercase">Hum</span>
+                                    <span className="text-sm font-black font-mono">{telemetry.hum}%</span>
                                 </div>
                             </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                        ) : (
+                            <div className="text-center py-1 opacity-40">
+                                <Activity className="w-4 h-4 mx-auto mb-1" />
+                                <span className="text-[7px] font-bold uppercase">Sin Sensores</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
 
                 {/* OFFLINE STORAGE STATUS */}
-                <div className="w-full bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-4 mb-auto">
+                <div className="w-full bg-slate-800/50 border border-slate-700 rounded-2xl p-4 mb-4">
                     <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center gap-2">
-                            <Database className="w-3 h-3 text-indigo-400" />
-                            <span className="text-[10px] font-bold text-indigo-400 uppercase">Buffer Offline</span>
+                            <Database className="w-3 h-3 text-emerald-400" />
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Buffer de Datos</span>
                         </div>
                         <span className="text-[10px] font-mono font-bold">{offlineBuffer.length}/100</span>
                     </div>
                     <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                        <motion.div className="h-full bg-indigo-500" style={{ width: `${offlineBuffer.length}%` }} />
+                        <motion.div className="h-full bg-emerald-500" style={{ width: `${offlineBuffer.length}%` }} />
                     </div>
                 </div>
 
@@ -158,21 +215,24 @@ const MobileSync = () => {
                 <button
                     disabled={offlineBuffer.length === 0 || isSyncing}
                     onClick={syncToCloud}
-                    className={`mt-4 w-full py-4 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest transition-all ${offlineBuffer.length > 0 ? 'bg-white text-black' : 'bg-slate-800 text-slate-600'}`}
+                    className={`w-full py-4 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest transition-all ${offlineBuffer.length > 0 ? 'bg-white text-black' : 'bg-slate-800 text-slate-600'}`}
                 >
                     {isSyncing ? (
-                        <>Subiendo...</>
+                        <>Sincronizando...</>
                     ) : (
                         <>
                             <CloudUpload className="w-4 h-4" />
-                            Sincronizar a la Nube
+                            Enviar a Nube
                         </>
                     )}
                 </button>
 
-                <div className="mt-6 flex items-center gap-2 text-[8px] text-slate-500">
-                    <AlertCircle className="w-2 h-2" />
-                    <span>Los datos se guardan localmente hasta detectar conexión.</span>
+                <div className="mt-auto pt-6 flex flex-col items-center gap-4">
+                    <div className="flex items-center gap-2 text-[8px] text-slate-500 uppercase font-black">
+                        <MapPin className="w-2 h-2" />
+                        <span>Redondos S.A. Digital Twin System</span>
+                    </div>
+                    <div className="w-1/2 h-1 bg-slate-800 rounded-full"></div>
                 </div>
             </div>
         </div>

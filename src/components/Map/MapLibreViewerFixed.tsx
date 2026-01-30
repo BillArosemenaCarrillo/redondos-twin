@@ -12,6 +12,8 @@ import BiosecurityDashboard from "../Dashboard/BiosecurityDashboard";
 import ResourceDashboard from "../Dashboard/ResourceDashboard";
 import PredictiveDashboard from "../Dashboard/PredictiveDashboard";
 import WelfareDashboard from "../Dashboard/WelfareDashboard";
+import LogisticsDashboard from "../Dashboard/LogisticsDashboard";
+import PlantDashboard from "../Dashboard/PlantDashboard";
 import MobileSync from "../Dashboard/MobileSync";
 import masterData from "../../data/infrastructure.json";
 
@@ -71,6 +73,8 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
     const [breachAlert, setBreachAlert] = useState<{ active: boolean; msg: string }>({ active: false, msg: "" });
     // GeoJSON State for Buildings
     const [geoJsonData, setGeoJsonData] = useState<any>(masterData);
+    const [trackers, setTrackers] = useState<Record<string, any>>({});
+    const [traces, setTraces] = useState<Record<string, [number, number][]>>({});
 
     // Refs to avoid stale closures in animation loops
     const redZonesRef = useRef({
@@ -137,6 +141,48 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
             }
         };
         loadInfrastructure();
+    }, []);
+
+    // --- TRACKERS POLLING: LOAD FROM LOCAL STORAGE + CLOUD API ---
+    useEffect(() => {
+        const pollTrackers = async () => {
+            // 1. Load Local (for cross-tab testing)
+            const trackersJson = localStorage.getItem('redondos_trackers');
+            let localTrackers = trackersJson ? JSON.parse(trackersJson) : {};
+
+            // 2. Load Cloud (for phone testing)
+            try {
+                const response = await fetch('/api/trackers');
+                if (response.ok) {
+                    const cloudTrackers = await response.json();
+                    localTrackers = { ...localTrackers, ...cloudTrackers };
+                }
+            } catch (err) {
+                console.error("Cloud tracking sync failed", err);
+            }
+
+            setTrackers(localTrackers);
+
+            // Update traces
+            setTraces((prev: Record<string, [number, number][]>) => {
+                const newTraces = { ...prev };
+                Object.values(localTrackers).forEach((t: any) => {
+                    const coord: [number, number] = [t.coords.lng, t.coords.lat];
+                    if (!newTraces[t.id]) {
+                        newTraces[t.id] = [coord];
+                    } else {
+                        const last = newTraces[t.id][newTraces[t.id].length - 1];
+                        if (last[0] !== coord[0] || last[1] !== coord[1]) {
+                            newTraces[t.id] = [...newTraces[t.id].slice(-50), coord];
+                        }
+                    }
+                });
+                return newTraces;
+            });
+        };
+
+        const interval = setInterval(pollTrackers, 2000); // Poll every 2s
+        return () => clearInterval(interval);
     }, []);
 
     // --- PERSISTENCE: SAVE FUNCTION ---
@@ -216,7 +262,7 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
             properties: { id: id, type: 'galpon', height: 6, color: '#fef3c7', name: `Galpon ${id.toString().slice(-4)}` },
             geometry: { type: 'Polygon', coordinates: [coords] }
         };
-        setGeoJsonData(prev => ({ ...prev, features: [...prev.features, newFeature] }));
+        setGeoJsonData((prev: any) => ({ ...prev, features: [...prev.features, newFeature] }));
     };
 
     const addSilo = () => {
@@ -231,7 +277,7 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
             properties: { id: id, type: 'silo', height: 12, color: '#fbbf24', name: `Silo ${id.toString().slice(-4)}` },
             geometry: { type: 'Polygon', coordinates: [coords] }
         };
-        setGeoJsonData(prev => ({ ...prev, features: [...prev.features, newFeature] }));
+        setGeoJsonData((prev: any) => ({ ...prev, features: [...prev.features, newFeature] }));
     };
 
     const addLaguna = () => {
@@ -246,7 +292,7 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
             properties: { id: id, type: 'laguna', height: 0.1, color: '#0ea5e9', name: `Laguna ${id}` },
             geometry: { type: 'Polygon', coordinates: [coords] }
         };
-        setGeoJsonData(prev => ({ ...prev, features: [...prev.features, newFeature] }));
+        setGeoJsonData((prev: any) => ({ ...prev, features: [...prev.features, newFeature] }));
     };
 
     const addZona = () => {
@@ -261,7 +307,7 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
             properties: { id: id, type: 'zona_roja', height: 0, color: '#ef4444', name: `Zona ${id}` },
             geometry: { type: 'Polygon', coordinates: [coords] }
         };
-        setGeoJsonData(prev => ({ ...prev, features: [...prev.features, newFeature] }));
+        setGeoJsonData((prev: any) => ({ ...prev, features: [...prev.features, newFeature] }));
     };
 
     const addEdificio = () => {
@@ -276,7 +322,7 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
             properties: { id: id, type: 'edificio', height: 12, color: '#64748b', name: `Edificio ${id}` },
             geometry: { type: 'Polygon', coordinates: [coords] }
         };
-        setGeoJsonData(prev => ({ ...prev, features: [...prev.features, newFeature] }));
+        setGeoJsonData((prev: any) => ({ ...prev, features: [...prev.features, newFeature] }));
     };
 
     const addSiloGigante = () => {
@@ -291,7 +337,7 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
             properties: { id: id, type: 'silo_gigante', height: 30, color: '#7c3aed', name: `Silo Gigante ${id.toString().slice(-4)}` }, // Purple
             geometry: { type: 'Polygon', coordinates: [coords] }
         };
-        setGeoJsonData(prev => ({ ...prev, features: [...prev.features, newFeature] }));
+        setGeoJsonData((prev: any) => ({ ...prev, features: [...prev.features, newFeature] }));
     };
 
     const addPlanta = () => {
@@ -348,6 +394,28 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
         setGeoJsonData(prev => ({ ...prev, features: [...prev.features, featPool, featTank] }));
     };
 
+    const addLoRa = () => {
+        if (!map.current) return;
+        const center = map.current.getCenter();
+        const id = Date.now();
+        const coords = createCirclePolygon(center.lng, center.lat, 5); // 10m Diameter base
+
+        const newFeature = {
+            type: 'Feature',
+            id: id,
+            properties: {
+                id: id,
+                type: 'lora_gateway',
+                height: 15,
+                color: '#ec4899', // Pinkish
+                name: `LoRa Gateway ${id.toString().slice(-4)}`,
+                radius: 2000 // 2km coverage
+            },
+            geometry: { type: 'Polygon', coordinates: [coords] }
+        };
+        setGeoJsonData((prev: any) => ({ ...prev, features: [...prev.features, newFeature] }));
+    };
+
     // --- SYNC GEOJSON STATE TO MAP SOURCES ---
     useEffect(() => {
         if (!map.current || !geoJsonData) return;
@@ -375,6 +443,7 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
         updateSource('lagoons', f => f.properties.type === 'laguna');
         updateSource('solar', f => f.properties.type === 'solar');
         updateSource('biosecurity-zones', f => f.properties.type === 'zona_roja');
+        updateSource('lora-gateways', f => f.properties.type === 'lora_gateway');
 
     }, [geoJsonData]);
     const [mapStyle, setMapStyle] = useState<'dark' | 'streets'>('dark');
@@ -1113,10 +1182,143 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
 
                     source.setData({ type: 'FeatureCollection', features } as any);
                 }
+
+                // TRACKERS LAYER SYNC
+                const trackersSource = map.current.getSource('live-trackers') as maplibregl.GeoJSONSource;
+                if (trackersSource && Object.keys(trackers).length > 0) {
+                    trackersSource.setData({
+                        type: 'FeatureCollection',
+                        features: Object.values(trackers).map((t: any) => ({
+                            type: 'Feature',
+                            properties: { ...t },
+                            geometry: { type: 'Point', coordinates: [t.coords.lng, t.coords.lat] }
+                        }))
+                    } as any);
+                }
+
+                const tracesSource = map.current.getSource('traces') as maplibregl.GeoJSONSource;
+                if (tracesSource && Object.keys(traces).length > 0) {
+                    tracesSource.setData({
+                        type: 'FeatureCollection',
+                        features: Object.entries(traces).map(([id, coords]) => ({
+                            type: 'Feature',
+                            properties: { id },
+                            geometry: { type: 'LineString', coordinates: coords }
+                        }))
+                    } as any);
+                }
+
+                const loraSource = map.current.getSource('lora-gateways') as maplibregl.GeoJSONSource;
+                if (loraSource && geoJsonRef.current) {
+                    loraSource.setData({
+                        type: 'FeatureCollection',
+                        features: geoJsonRef.current.features.filter((f: any) => f.properties.type === 'lora_gateway')
+                    } as any);
+                }
+
                 requestAnimationFrame(animatePersonnel);
             };
 
             animatePersonnel();
+
+            // --- LIVE TRACKERS & TRACES LAYERS ---
+            map.current.addSource('traces', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: [] }
+            });
+
+            map.current.addLayer({
+                id: 'traces-layer',
+                type: 'line',
+                source: 'traces',
+                paint: {
+                    'line-color': '#6366f1',
+                    'line-width': 2,
+                    'line-dasharray': [2, 2],
+                    'line-opacity': 0.5
+                }
+            });
+
+            map.current.addSource('live-trackers', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: [] }
+            });
+
+            map.current.addLayer({
+                id: 'live-trackers-layer',
+                type: 'circle',
+                source: 'live-trackers',
+                paint: {
+                    'circle-radius': 10,
+                    'circle-color': [
+                        'match',
+                        ['get', 'type'],
+                        'person', '#6366f1',
+                        'vehicle', '#f59e0b',
+                        'truck', '#10b981',
+                        '#ffffff'
+                    ],
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#ffffff'
+                }
+            });
+
+            map.current.addLayer({
+                id: 'live-trackers-label',
+                type: 'symbol',
+                source: 'live-trackers',
+                layout: {
+                    'text-field': ['get', 'name'],
+                    'text-size': 10,
+                    'text-offset': [0, 1.5],
+                    'text-anchor': 'top',
+                    'text-font': ['Open Sans Bold']
+                },
+                paint: {
+                    'text-color': '#ffffff',
+                    'text-halo-color': '#000000',
+                    'text-halo-width': 1
+                }
+            });
+
+            // --- LoRa GATEWAYS ---
+            map.current.addSource('lora-gateways', {
+                type: 'geojson',
+                data: {
+                    type: 'FeatureCollection',
+                    features: geoJsonData.features.filter((f: any) => f.properties.type === 'lora_gateway')
+                }
+            });
+
+            // Coverage Radius (Circle layer)
+            map.current.addLayer({
+                id: 'lora-coverage',
+                type: 'circle',
+                source: 'lora-gateways',
+                paint: {
+                    'circle-radius': [
+                        'interpolate', ['linear'], ['zoom'],
+                        10, 5,
+                        22, 500 // Mock visual radius
+                    ],
+                    'circle-color': '#ec4899',
+                    'circle-opacity': 0.1,
+                    'circle-stroke-width': 1,
+                    'circle-stroke-color': '#ec4899',
+                    'circle-stroke-opacity': 0.3
+                }
+            }, 'base-layer-dark');
+
+            map.current.addLayer({
+                id: 'lora-fill',
+                type: 'fill-extrusion',
+                source: 'lora-gateways',
+                paint: {
+                    'fill-extrusion-color': '#ec4899',
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-opacity': 0.9
+                }
+            });
 
             // Unified Click Interaction
             map.current.on('click', (e) => {
@@ -1242,6 +1444,16 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
                     });
                 });
             }
+
+            // 1b. Check LIVE TRACKERS
+            Object.values(trackers).forEach((t: any) => {
+                const coords = [t.coords.lng, t.coords.lat];
+                redZonesRef.current.features.forEach((zone: any) => {
+                    if (isPointInPolygon(coords, zone.geometry.coordinates)) {
+                        currentBreach = `CRITICAL: ${t.name.toUpperCase()} IN RESTRICTED AREA!`;
+                    }
+                });
+            });
 
             // 2. Check Truck (if not already breached by person)
             if (!currentBreach) {
@@ -1713,6 +1925,13 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
                                         </div>
                                         <span className="text-[10px]">PTAR</span>
                                     </button>
+                                    <button onClick={addLoRa} className="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded border border-slate-600 flex flex-col items-center gap-1 w-20">
+                                        <div className="relative w-6 h-6 flex items-center justify-center">
+                                            <div className="w-1 h-6 bg-pink-500 rounded-full"></div>
+                                            <div className="absolute w-4 h-4 rounded-full border border-pink-400 animate-ping"></div>
+                                        </div>
+                                        <span className="text-[10px]">LoRa</span>
+                                    </button>
                                     <div className="w-px bg-slate-700 mx-2"></div>
                                     {/* BIM TOOLS */}
                                     <div className="flex gap-2 justify-center">
@@ -1816,17 +2035,8 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
                 {activeSection === 'welfare' && <WelfareDashboard />}
                 {activeSection === 'sync' && <MobileSync />}
                 {activeSection === 'resources' && <ResourceDashboard />}
-
-                {/* PLACEHOLDERS FOR OTHER SECTIONS */}
-                {activeSection === 'logistics' && (
-                    <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 p-20 text-center">
-                        <div className="w-20 h-20 bg-indigo-500/20 rounded-full flex items-center justify-center mb-6 animate-pulse border border-indigo-500/50 text-indigo-400">
-                            🚧
-                        </div>
-                        <h2 className="text-2xl font-black text-white mb-2">MÓDULO EN DESARROLLO</h2>
-                        <p className="text-slate-500 max-w-sm">Estamos integrando la telemetría avanzada para {activeSection}. Disponible en la siguiente actualización.</p>
-                    </div>
-                )}
+                {activeSection === 'logistics' && <LogisticsDashboard />}
+                {activeSection === 'plant' && <PlantDashboard />}
             </main>
         </div>
     );
