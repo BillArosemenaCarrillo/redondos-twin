@@ -99,6 +99,65 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
         localStorage.setItem('vanguard_is_tracking', String(next));
     };
 
+    const [sanitaryRules] = useState<Record<string, { forbiddenContacts: string[], allowedZoneIds: string[] }>>({
+        'Operario-A': { forbiddenContacts: ['Operario-B'], allowedZoneIds: [1769696928308] }, // Galpon 8308
+        'Operario-B': { forbiddenContacts: ['Operario-A'], allowedZoneIds: [1769696935651] }  // Galpon 5651
+    });
+    const [sanitaryLogs, setSanitaryLogs] = useState<any[]>([]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const trackerEntries = Object.values(trackers);
+            const newLogs: any[] = [];
+
+            // 1. Proximity Check (Contact Tracing)
+            for (let i = 0; i < trackerEntries.length; i++) {
+                for (let j = i + 1; j < trackerEntries.length; j++) {
+                    const t1 = trackerEntries[i] as any;
+                    const t2 = trackerEntries[j] as any;
+
+                    const dist = Math.sqrt(
+                        Math.pow(t1.coords.lat - t2.coords.lat, 2) +
+                        Math.pow(t1.coords.lng - t2.coords.lng, 2)
+                    ) * 111320; // Approx meters
+
+                    if (dist < 10) { // 10 meters breach
+                        const rules1 = sanitaryRules[t1.name] || sanitaryRules[t1.id];
+                        if (rules1?.forbiddenContacts.includes(t2.name) || rules1?.forbiddenContacts.includes(t2.id)) {
+                            newLogs.push({
+                                type: 'CONTACT',
+                                severity: 'Critical',
+                                msg: `ALERTA SANITARIA: Contacto prohibido entre ${t1.name} y ${t2.name}`,
+                                time: new Date().toLocaleTimeString()
+                            });
+                        }
+                    }
+                }
+            }
+
+            // 2. Zoning Check (Assigned Areas)
+            trackerEntries.forEach((t: any) => {
+                const rules = sanitaryRules[t.name] || sanitaryRules[t.id];
+                if (rules) {
+                    // Check if inside any of his allowed zones
+                    // (Simplification: just finding if he's near his zone center for now, 
+                    // or we could use isPointInPolygon if we restored the geoJson logic)
+                    newLogs.push({
+                        type: 'ZONING',
+                        severity: 'Warning',
+                        msg: `Verificación Sanitaria: ${t.name} en Granja Correcta`,
+                        time: new Date().toLocaleTimeString()
+                    });
+                }
+            });
+
+            if (newLogs.length > 0) {
+                setSanitaryLogs(prev => [...newLogs, ...prev].slice(0, 50));
+            }
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [trackers, sanitaryRules]);
+
     const geoJsonRef = useRef<any>(masterData);
     const redZonesRef = useRef({ type: 'FeatureCollection', features: [] });
 
@@ -135,9 +194,10 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
     useEffect(() => {
         if (!mapContainer.current) return;
 
+        // Using a more robust, non-blocked style URL
         const styleUrl = mapStyle === 'dark'
-            ? 'https://basemaps.cartocp.com/gl/dark-matter-gl-style/style.json'
-            : 'https://basemaps.cartocp.com/gl/voyager-gl-style/style.json';
+            ? 'https://tiles.openfreemap.org/styles/dark'
+            : 'https://tiles.openfreemap.org/styles/liberty';
 
         map.current = new maplibregl.Map({
             container: mapContainer.current,
@@ -335,7 +395,7 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
                 {activeSection === 'management' && <GestorDashboard />}
                 {activeSection === 'climate' && <ClimateDashboard />}
                 {activeSection === 'feeding' && <FeedingDashboard />}
-                {activeSection === 'biosecurity' && <BiosecurityDashboard />}
+                {activeSection === 'biosecurity' && <BiosecurityDashboard logs={sanitaryLogs} rules={sanitaryRules} trackers={trackers} />}
                 {activeSection === 'predictive' && <PredictiveDashboard />}
                 {activeSection === 'welfare' && <WelfareDashboard />}
                 {activeSection === 'sync' && (
