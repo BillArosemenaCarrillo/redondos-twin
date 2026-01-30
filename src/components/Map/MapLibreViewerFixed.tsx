@@ -143,23 +143,11 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
         loadInfrastructure();
     }, []);
 
-    // --- TRACKERS POLLING: LOAD FROM LOCAL STORAGE + CLOUD API ---
+    // --- TRACKERS POLLING: LOAD FROM LOCAL STORAGE ---
     useEffect(() => {
         const pollTrackers = async () => {
-            // 1. Load Local (for cross-tab testing)
             const trackersJson = localStorage.getItem('redondos_trackers');
             let localTrackers = trackersJson ? JSON.parse(trackersJson) : {};
-
-            // 2. Load Cloud (for phone testing)
-            try {
-                const response = await fetch('/api/trackers');
-                if (response.ok) {
-                    const cloudTrackers = await response.json();
-                    localTrackers = { ...localTrackers, ...cloudTrackers };
-                }
-            } catch (err) {
-                console.error("Cloud tracking sync failed", err);
-            }
 
             setTrackers(localTrackers);
 
@@ -181,7 +169,7 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
             });
         };
 
-        const interval = setInterval(pollTrackers, 2000); // Poll every 2s
+        const interval = setInterval(pollTrackers, 2000);
         return () => clearInterval(interval);
     }, []);
 

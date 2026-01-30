@@ -57,13 +57,6 @@ export const useTracker = (enable: boolean = false) => {
 
                 trackers[myTrackerId] = trackerData;
                 localStorage.setItem('redondos_trackers', JSON.stringify(trackers));
-
-                // BROADCAST TO CLOUD API
-                fetch('/api/trackers', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(trackerData)
-                }).catch(err => console.error("Cloud broadcast failed", err));
             },
             (err) => {
                 setError(err.message);
