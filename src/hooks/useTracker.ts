@@ -57,6 +57,11 @@ export const useTracker = (enable: boolean = false) => {
 
                 trackers[myTrackerId] = trackerData;
                 localStorage.setItem('redondos_trackers', JSON.stringify(trackers));
+
+                // SYNC TO CLOUD (FIREBASE)
+                import('../lib/firebase').then(({ updateTrackerInCloud }) => {
+                    updateTrackerInCloud(myTrackerId, trackerData);
+                }).catch(err => console.error("Firebase sync error", err));
             },
             (err) => {
                 setError(err.message);

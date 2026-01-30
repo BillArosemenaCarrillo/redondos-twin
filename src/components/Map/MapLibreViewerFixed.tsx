@@ -143,34 +143,49 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
         loadInfrastructure();
     }, []);
 
-    // --- TRACKERS POLLING: LOAD FROM LOCAL STORAGE ---
+    // --- TRACKERS SYNC: LOCAL STORAGE + FIREBASE CLOUD ---
     useEffect(() => {
-        const pollTrackers = async () => {
-            const trackersJson = localStorage.getItem('redondos_trackers');
-            let localTrackers = trackersJson ? JSON.parse(trackersJson) : {};
+        // 1. Initial Local Load
+        const trackersJson = localStorage.getItem('redondos_trackers');
+        if (trackersJson) setTrackers(JSON.parse(trackersJson));
 
-            setTrackers(localTrackers);
+        // 2. Client-side Firebase listening (Static compatible)
+        let cancelListener: any = null;
 
-            // Update traces
-            setTraces((prev: Record<string, [number, number][]>) => {
-                const newTraces = { ...prev };
-                Object.values(localTrackers).forEach((t: any) => {
-                    const coord: [number, number] = [t.coords.lng, t.coords.lat];
-                    if (!newTraces[t.id]) {
-                        newTraces[t.id] = [coord];
-                    } else {
-                        const last = newTraces[t.id][newTraces[t.id].length - 1];
-                        if (last[0] !== coord[0] || last[1] !== coord[1]) {
-                            newTraces[t.id] = [...newTraces[t.id].slice(-50), coord];
-                        }
-                    }
+        const initCloudSync = async () => {
+            try {
+                const { listenToTrackers } = await import('../../lib/firebase');
+                cancelListener = listenToTrackers((cloudTrackers) => {
+                    setTrackers(prev => {
+                        const merged = { ...prev, ...cloudTrackers };
+
+                        // Update traces whenever we get new cloud/local coordinates
+                        setTraces((tracePrev: Record<string, [number, number][]>) => {
+                            const newTraces = { ...tracePrev };
+                            Object.values(merged).forEach((t: any) => {
+                                const coord: [number, number] = [t.coords.lng, t.coords.lat];
+                                if (!newTraces[t.id]) {
+                                    newTraces[t.id] = [coord];
+                                } else {
+                                    const last = newTraces[t.id][newTraces[t.id].length - 1];
+                                    if (last[0] !== coord[0] || last[1] !== coord[1]) {
+                                        newTraces[t.id] = [...newTraces[t.id].slice(-50), coord];
+                                    }
+                                }
+                            });
+                            return newTraces;
+                        });
+
+                        return merged;
+                    });
                 });
-                return newTraces;
-            });
+            } catch (err) {
+                console.error("Firebase startup error", err);
+            }
         };
 
-        const interval = setInterval(pollTrackers, 2000);
-        return () => clearInterval(interval);
+        initCloudSync();
+        return () => { if (cancelListener) cancelListener(); };
     }, []);
 
     // --- PERSISTENCE: SAVE FUNCTION ---
