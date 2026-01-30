@@ -95,9 +95,9 @@ const MobileSync = () => {
     };
 
     return (
-        <div className="flex-1 bg-slate-950 flex flex-col items-center justify-center p-4 text-white overflow-y-auto">
-            {/* MOBILE TOP BAR */}
-            <div className="w-full max-w-sm flex justify-between items-center mb-4 px-4">
+        <div className="flex-1 bg-slate-950 flex flex-col items-center justify-start md:justify-center p-0 md:p-4 text-white overflow-y-auto">
+            {/* MOBILE TOP BAR - Hidden on small mobile to save space */}
+            <div className="hidden md:flex w-full max-w-sm justify-between items-center mb-4 px-4">
                 <div className="flex items-center gap-2">
                     <WifiOff className="w-4 h-4 text-slate-500" />
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Modo Híbrido</span>
@@ -108,8 +108,8 @@ const MobileSync = () => {
                 </div>
             </div>
 
-            {/* MAIN APP CONTAINER */}
-            <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-[3rem] p-6 shadow-2xl relative overflow-hidden flex flex-col items-center min-h-[700px]">
+            {/* MAIN APP CONTAINER - Fluid on mobile, fixed max-sm on desktop */}
+            <div className="w-full md:max-w-sm h-full md:h-auto md:min-h-[700px] bg-slate-900 border-x-0 md:border md:border-slate-800 rounded-none md:rounded-[3rem] p-6 shadow-2xl relative overflow-hidden flex flex-col items-center">
                 <div className="w-1/3 h-1.5 bg-slate-800 rounded-full mb-6"></div>
 
                 <div className="text-center mb-6">

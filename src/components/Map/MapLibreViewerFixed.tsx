@@ -1555,11 +1555,13 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
     }, [activeTool]);
 
     return (
-        <div className="flex h-screen bg-black overflow-hidden font-sans">
-            {/* Modular Sidebar */}
-            <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+        <div className="flex flex-col md:flex-row h-[100dvh] bg-black overflow-hidden font-sans">
+            {/* Modular Sidebar - Moves to bottom on mobile */}
+            <div className="order-2 md:order-1 h-auto md:h-full w-full md:w-20">
+                <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+            </div>
 
-            <main className="flex-1 relative overflow-hidden flex flex-col">
+            <main className="flex-1 order-1 md:order-2 relative overflow-hidden flex flex-col h-full w-full">
                 <div className={`relative w-full h-full ${className} ${activeSection !== 'overview' ? 'hidden' : ''}`}>
                     <div ref={mapContainer} className="w-full h-full" />
 
