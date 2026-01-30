@@ -17,7 +17,19 @@ import {
 } from 'lucide-react';
 import { useTracker } from '../../hooks/useTracker';
 
-const MobileSync = () => {
+interface MobileSyncProps {
+    isTracking?: boolean;
+    toggleTracking?: () => void;
+    coords?: any;
+    error?: string | null;
+}
+
+const MobileSync: React.FC<MobileSyncProps> = ({
+    isTracking: externalIsTracking,
+    toggleTracking: externalToggleTracking,
+    coords: externalCoords,
+    error: externalError
+}) => {
     const [isScanning, setIsScanning] = useState(false);
     const [device, setDevice] = useState<any>(null);
     const [telemetry, setTelemetry] = useState<any>(null);
@@ -25,8 +37,15 @@ const MobileSync = () => {
     const [isSyncing, setIsSyncing] = useState(false);
 
     // GPS Tracker State
-    const [isTracking, setIsTracking] = useState(false);
-    const { coords, error: gpsError } = useTracker(isTracking);
+    const [localIsTracking, setLocalIsTracking] = useState(false);
+    const { coords: localCoords, error: localGpsError } = useTracker(localIsTracking);
+
+    // Use external props if provided, otherwise fallback to local state
+    const isTracking = externalIsTracking !== undefined ? externalIsTracking : localIsTracking;
+    const coords = externalCoords !== undefined ? externalCoords : localCoords;
+    const toggleTracking = externalToggleTracking !== undefined ? externalToggleTracking : () => setLocalIsTracking(!localIsTracking);
+    const gpsError = externalError !== undefined ? externalError : localGpsError;
+
     const [userName, setUserName] = useState('Operario 01');
 
     useEffect(() => {
@@ -41,13 +60,6 @@ const MobileSync = () => {
         localStorage.setItem('vanguard_my_name', name);
     };
 
-    const toggleTracking = () => {
-        const next = !isTracking;
-        setIsTracking(next);
-        if (next) {
-            localStorage.setItem('vanguard_my_type', 'person');
-        }
-    };
 
     const connectBluetooth = async () => {
         setIsScanning(true);
