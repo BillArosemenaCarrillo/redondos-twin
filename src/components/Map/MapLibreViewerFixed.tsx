@@ -194,17 +194,52 @@ export const MapLibreViewer = ({ className }: { className?: string }) => {
         const updateMapData = () => {
             const source = map.current?.getSource('live-trackers') as maplibregl.GeoJSONSource;
             if (source) {
-                const features = Object.values(trackers).map(t => ({
-                    type: 'Feature',
-                    geometry: { type: 'Point', coordinates: [t.coords.lng, t.coords.lat] },
-                    properties: { name: t.name, id: t.id }
-                }));
+                const features = Object.values(trackers)
+                    .filter(t => t && t.coords && typeof t.coords.lng === 'number')
+                    .map(t => ({
+                        type: 'Feature',
+                        geometry: { type: 'Point', coordinates: [t.coords.lng, t.coords.lat] },
+                        properties: { name: t.name, id: t.id }
+                    }));
                 source.setData({ type: 'FeatureCollection', features: features as any });
             }
         };
 
         updateMapData();
     }, [trackers]);
+
+    // --- SENSOR SIMULATION ---
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const newData: Record<string, SimulationState> = {};
+            geoJsonData.features?.forEach((f: any) => {
+                if (f.properties.type === 'galpon') {
+                    newData[f.id] = {
+                        temperature: 24 + Math.random() * 5,
+                        humidity: 60 + Math.random() * 10,
+                        ammonia: 10 + Math.random() * 5,
+                        fanSpeed: 100,
+                        lastUpdated: new Date(),
+                        pigCount: 500,
+                        pigAge: 12,
+                        pigStage: 'Crecimiento',
+                        foodConsumption: 150,
+                        ventilationOn: true,
+                        extractorOn: true,
+                        foodPricePerKg: 1.5,
+                        weightPerPig: 45,
+                        totalFoodPrice: 225,
+                        totalMeatWeight: 22500,
+                        siloCapacity: 10000,
+                        siloLevel: 8000,
+                        feedType: 'Crecimiento'
+                    };
+                }
+            });
+            setSensorData(newData);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [geoJsonData]);
 
     const focusOnTrackers = () => {
         const activeTrackers = Object.values(trackers);
